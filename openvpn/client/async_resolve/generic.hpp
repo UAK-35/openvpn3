@@ -60,6 +60,7 @@ class AsyncResolvable : public virtual RC<thread_unsafe_refcount>
     // implementation satisfies the constraints mentioned above
     virtual void async_resolve_name(const std::string &host, const std::string &port)
     {
+OPENVPN_LOG("async_resolve_name: " + host);
         resolver.async_resolve(host,
                                port,
                                [self = Ptr(this)](const openvpn_io::error_code &error, results_type results)

@@ -413,12 +413,17 @@ class OpenSSLContext : public SSLFactoryAPI
                     load_crl(crl_txt);
             }
 
+OPENVPN_LOG("local_cert_enabled = " + std::string(local_cert_enabled ? "true" : "false"));
+OPENVPN_LOG("server mode = " + std::string(mode.is_server() ? "true" : "false"));
+OPENVPN_LOG("client mode = " + std::string(mode.is_client() ? "true" : "false"));
+
             // local cert/key
             if (local_cert_enabled)
             {
                 // cert
                 {
                     const std::string &cert_txt = opt.get("cert", 1, Option::MULTILINE);
+//OPENVPN_LOG(cert_txt);
                     const std::string ec_txt = opt.cat("extra-certs");
                     load_cert(cert_txt, ec_txt);
                 }

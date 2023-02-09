@@ -1255,6 +1255,7 @@ class Session : ProtoContext,
     {
         if (!ch.psid() && creds)
             creds->purge_session_id();
+OPENVPN_LOG("process_halt_restart - before CLIENT_RESTART check");
         if (ch.restart())
             fatal_ = Error::CLIENT_RESTART;
         else

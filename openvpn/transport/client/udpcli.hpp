@@ -92,6 +92,7 @@ class Client : public TransportClient, AsyncResolvableUDP
   public:
     void transport_start() override
     {
+OPENVPN_LOG("transport_start called");
         if (!impl)
         {
             halt = false;
@@ -275,6 +276,7 @@ class Client : public TransportClient, AsyncResolvableUDP
             else
             {
                 std::ostringstream os;
+os << "resolve_callback: ERROR" << std::endl;
                 os << "DNS resolve error on '" << server_host << "' for UDP session: " << error.message();
                 config->stats->error(Error::RESOLVE_ERROR);
                 stop();

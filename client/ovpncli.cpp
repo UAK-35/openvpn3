@@ -697,6 +697,7 @@ OPENVPN_CLIENT_EXPORT void OpenVPNClientHelper::parse_config(const Config &confi
 
 OPENVPN_CLIENT_EXPORT void OpenVPNClient::parse_extras(const Config &config, EvalConfig &eval)
 {
+OPENVPN_LOG("parse_extras - config.synchronousDnsLookup = " + std::string(config.synchronousDnsLookup ? "true" : "false"));
     try
     {
         state->server_override = config.serverOverride;
@@ -971,6 +972,7 @@ OPENVPN_CLIENT_EXPORT Status OpenVPNClient::do_connect()
 
 OPENVPN_CLIENT_EXPORT void OpenVPNClient::do_connect_async()
 {
+OPENVPN_LOG("do_connect_async called");
     enum StopType
     {
         NONE,
@@ -1004,6 +1006,8 @@ OPENVPN_CLIENT_EXPORT void OpenVPNClient::do_connect_async()
 
 OPENVPN_CLIENT_EXPORT void OpenVPNClient::connect_setup(Status &status, bool &session_started)
 {
+OPENVPN_LOG("connect_setup called");
+OPENVPN_LOG("connect_setup - state->synchronous_dns_lookup = " + std::string(state->synchronous_dns_lookup ? "true" : "false"));
     // set global MbedTLS debug level
 #if defined(USE_MBEDTLS) || defined(USE_MBEDTLS_APPLE_HYBRID)
     mbedtls_debug_set_threshold(state->ssl_debug_level); // fixme -- using a global method for this seems wrong
@@ -1069,6 +1073,7 @@ OPENVPN_CLIENT_EXPORT void OpenVPNClient::connect_setup(Status &status, bool &se
 #if defined(OPENVPN_PLATFORM_ANDROID)
     cc.enable_route_emulation = state->enable_route_emulation;
 #endif
+OPENVPN_LOG("connect_setup-001");
     // force Session ID use and disable password cache if static challenge is enabled
     if (state->creds
         && !state->creds->get_replace_password_with_session_id()
@@ -1078,71 +1083,81 @@ OPENVPN_CLIENT_EXPORT void OpenVPNClient::connect_setup(Status &status, bool &se
         state->creds->set_replace_password_with_session_id(true);
         state->creds->enable_password_cache(false);
     }
+OPENVPN_LOG("connect_setup-002");
 
     // external PKI
 #if !defined(USE_APPLE_SSL)
     if (state->eval.externalPki && !state->disable_client_cert)
     {
+OPENVPN_LOG("connect_setup-003");
         if (!state->external_pki_alias.empty())
         {
+OPENVPN_LOG("connect_setup-004");
             ExternalPKICertRequest req;
             req.alias = state->external_pki_alias;
             external_pki_cert_request(req);
             if (!req.error)
             {
+OPENVPN_LOG("connect_setup-005");
                 cc.external_pki = this;
                 process_epki_cert_chain(req);
             }
             else
             {
+OPENVPN_LOG("connect_setup-006");
                 external_pki_error(req, Error::EPKI_CERT_ERROR);
                 return;
             }
         }
         else
         {
+OPENVPN_LOG("connect_setup-007");
             status.error = true;
             status.message = "Missing External PKI alias";
             return;
         }
     }
 #endif
+OPENVPN_LOG("connect_setup-008");
 
 #ifdef USE_OPENSSL
     if (state->options.exists("allow-name-constraints"))
     {
+OPENVPN_LOG("connect_setup-009");
         ClientEvent::Base::Ptr ev = new ClientEvent::UnsupportedFeature("allow-name-constraints",
                                                                         "Always verified correctly with OpenSSL",
                                                                         false);
         state->events->add_event(std::move(ev));
     }
 #endif
-
+OPENVPN_LOG("connect_setup-010");
     // build client options object
     ClientOptions::Ptr client_options = new ClientOptions(state->options, cc);
-
+OPENVPN_LOG("connect_setup-011");
     // configure creds in options
     client_options->submit_creds(state->creds);
-
+OPENVPN_LOG("connect_setup-012");
     // instantiate top-level client session
     state->session.reset(new ClientConnect(*state->io_context(), client_options));
-
+OPENVPN_LOG("connect_setup-013");
     // convenience clock tick
     if (state->clock_tick_ms)
     {
+OPENVPN_LOG("connect_setup-014");
         state->clock_tick.reset(new MyClockTick(*state->io_context(), this, state->clock_tick_ms));
         state->clock_tick->schedule();
     }
-
+OPENVPN_LOG("connect_setup-015");
     // start VPN
     state->session->start(); // queue reads on socket/tun
     session_started = true;
-
+OPENVPN_LOG("connect_setup-016");
     // wire up async stop
     state->setup_async_stop_scopes();
-
+OPENVPN_LOG("connect_setup-017");
     // prepare to start reactor
     connect_pre_run();
+OPENVPN_LOG("connect_setup-018");
     state->enable_foreign_thread_access();
 }
 
@@ -1164,6 +1179,7 @@ OPENVPN_CLIENT_EXPORT Status OpenVPNClient::status_from_exception(const std::exc
 
 OPENVPN_CLIENT_EXPORT void OpenVPNClient::connect_attach()
 {
+OPENVPN_LOG("connect_attach called");
     state->attach<MySessionStats, MyClientEvents>(this,
                                                   nullptr,
                                                   get_async_stop());
@@ -1175,6 +1191,7 @@ OPENVPN_CLIENT_EXPORT void OpenVPNClient::connect_pre_run()
 
 OPENVPN_CLIENT_EXPORT void OpenVPNClient::connect_run()
 {
+OPENVPN_LOG("connect_run called");
     state->io_context()->run();
 }
 

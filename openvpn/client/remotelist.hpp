@@ -466,29 +466,36 @@ class RemoteList : public RC<thread_unsafe_refcount>
         : random_hostname(opt.exists("remote-random-hostname")),
           directives(connection_tag), rng(rng_arg)
     {
+OPENVPN_LOG("RemoteList-constructor-001");
         process_cache_lifetime(opt);
 
         // defaults
         const Protocol default_proto = get_proto(opt, Protocol(Protocol::UDPv4));
+OPENVPN_LOG("RemoteList-constructor-002");
         const std::string default_port = get_port(opt, "1194");
+OPENVPN_LOG("RemoteList-constructor-003");
 
         // handle remote, port, and proto at the top-level
         if (!(flags & CONN_BLOCK_ONLY))
             add(opt, default_proto, default_port, ConnBlock::Ptr());
-
+OPENVPN_LOG("RemoteList-constructor-004");
         // cycle through <connection> blocks
         {
             const size_t max_conn_block_size = 4096;
             const OptionList::IndexList *conn = opt.get_index_ptr(directives.connection);
+OPENVPN_LOG("RemoteList-constructor-005");
             if (conn)
             {
+OPENVPN_LOG("RemoteList-constructor-006");
                 for (OptionList::IndexList::const_iterator i = conn->begin(); i != conn->end(); ++i)
                 {
                     try
                     {
+OPENVPN_LOG("RemoteList-constructor-007");
                         const Option &o = opt[*i];
                         o.touch();
                         const std::string &conn_block_text = o.get(1, Option::MULTILINE);
+OPENVPN_LOG("RemoteList-constructor-008");
                         OptionList::Limits limits("<connection> block is too large",
                                                   max_conn_block_size,
                                                   ProfileParseLimits::OPT_OVERHEAD,
@@ -498,10 +505,11 @@ class RemoteList : public RC<thread_unsafe_refcount>
                         OptionList::Ptr conn_block = OptionList::parse_from_config_static_ptr(conn_block_text, &limits);
                         const Protocol block_proto = get_proto(*conn_block, default_proto);
                         const std::string block_port = get_port(*conn_block, default_port);
-
+OPENVPN_LOG("RemoteList-constructor-009");
                         // unsupported options
                         if (flags & WARN_UNSUPPORTED)
                         {
+OPENVPN_LOG("RemoteList-constructor-010");
                             unsupported_in_connection_block(*conn_block, "http-proxy");
                             unsupported_in_connection_block(*conn_block, "http-proxy-option");
                             unsupported_in_connection_block(*conn_block, "http-proxy-user-pass");
@@ -514,10 +522,12 @@ class RemoteList : public RC<thread_unsafe_refcount>
                                 cb = conn_block_factory->new_conn_block(conn_block);
                             if (!(flags & CONN_BLOCK_OMIT_UNDEF) || cb)
                                 add(*conn_block, block_proto, block_port, cb);
+OPENVPN_LOG("RemoteList-constructor-011");
                         }
                     }
                     catch (Exception &e)
                     {
+OPENVPN_LOG("RemoteList-constructor-012");
                         e.remove_label("option_error");
                         e.add_label("connection_block");
                         throw;
@@ -526,8 +536,13 @@ class RemoteList : public RC<thread_unsafe_refcount>
             }
         }
 
+//        if (!(flags & ALLOW_EMPTY) && list.empty())
+//            throw option_error("remote option not specified");
         if (!(flags & ALLOW_EMPTY) && list.empty())
+        {
+OPENVPN_LOG("RemoteList-constructor-013");
             throw option_error("remote option not specified");
+        }
     }
 
     void process_push(const OptionList &opt)

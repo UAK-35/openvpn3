@@ -79,8 +79,10 @@ class TunIO : public RC<thread_unsafe_refcount>
                 // handle tun packet prefix, if enabled
                 if (tun_prefix)
                 {
+OPENVPN_LOG("tunio - write:001");
                     if (buf.offset() >= 4 && buf.size() >= 1)
                     {
+OPENVPN_LOG("tunio - write:002");
                         switch (IPCommon::version(buf[0]))
                         {
                         case 4:
@@ -97,23 +99,28 @@ class TunIO : public RC<thread_unsafe_refcount>
                     }
                     else
                     {
+OPENVPN_LOG("tunio - write:003");
                         OPENVPN_LOG_TUN_ERROR("TUN write error: cannot write prefix");
                         tun_error(Error::TUN_FRAMING_ERROR, nullptr);
                         return false;
                     }
                 }
-
+OPENVPN_LOG("tunio - write:004");
                 // write data to tun device
                 const size_t wrote = stream->write_some(buf.const_buffer());
+OPENVPN_LOG("tunio - write:005");
                 if (stats)
                 {
+OPENVPN_LOG("tunio - write:006");
                     stats->inc_stat(SessionStats::TUN_BYTES_OUT, wrote);
                     stats->inc_stat(SessionStats::TUN_PACKETS_OUT, 1);
                 }
+OPENVPN_LOG("tunio - write:007");
                 if (wrote == buf.size())
                     return true;
                 else
                 {
+OPENVPN_LOG("tunio - write:008");
                     OPENVPN_LOG_TUN_ERROR("TUN partial write error");
                     tun_error(Error::TUN_WRITE_ERROR, nullptr);
                     return false;
@@ -121,6 +128,7 @@ class TunIO : public RC<thread_unsafe_refcount>
             }
             catch (openvpn_io::system_error &e)
             {
+OPENVPN_LOG("tunio - write: ERROR");
                 OPENVPN_LOG_TUN_ERROR("TUN write exception: " << e.what());
                 const openvpn_io::error_code code(e.code());
                 tun_error(Error::TUN_WRITE_ERROR, &code);
@@ -156,6 +164,7 @@ class TunIO : public RC<thread_unsafe_refcount>
             }
             catch (openvpn_io::system_error &e)
             {
+OPENVPN_LOG("tunio - write_seq: ERROR");
                 OPENVPN_LOG_TUN_ERROR("TUN write exception: " << e.what());
                 const openvpn_io::error_code code(e.code());
                 tun_error(Error::TUN_WRITE_ERROR, &code);

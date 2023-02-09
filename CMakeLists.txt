@@ -1,3 +1,11 @@
+set(CLI_OVPNDCO "1")
+# set(USE_OPENSSL "1")
+set(CMAKE_INSTALL_CONFIG_NAME "Debug")
+set(CMAKE_INSTALL_PREFIX "/home/mgr/O3/core/install2" CACHE PATH "Installation directory")
+
+# set(CMAKE_GENERATOR "Unix Makefiles")
+message("generator is set to ${CMAKE_GENERATOR}")
+
 cmake_minimum_required(VERSION 3.5)
 cmake_policy(SET CMP0048 NEW)
 
@@ -32,6 +40,11 @@ add_subdirectory(test/unittests)
 add_subdirectory(test/ovpncli)
 add_subdirectory(test/ssl)
 
+add_executable(example1 example1.cpp)
+target_compile_definitions(example1 PRIVATE)
+target_link_libraries(example1 xkey)
+add_core_dependencies(example1)
+#add_core_dependencies(ovpnclilib)
 
 if (WIN32)
     add_subdirectory(openvpn/omi)

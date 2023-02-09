@@ -245,6 +245,7 @@ class ClientConnect : ClientProto::NotifyCallback,
 
     void thread_safe_reconnect(int seconds)
     {
+OPENVPN_LOG("thread_safe_reconnect called");
         if (!halt)
             openvpn_io::post(io_context, [self = Ptr(this), seconds]()
                              {
@@ -426,6 +427,7 @@ class ClientConnect : ClientProto::NotifyCallback,
 
     virtual void client_proto_terminate() override
     {
+OPENVPN_LOG("client_proto_terminate");
         if (!halt)
         {
             if (dont_restart_)
@@ -438,6 +440,7 @@ class ClientConnect : ClientProto::NotifyCallback,
                 {
                 case Error::UNDEF: // means that there wasn't a fatal error
                     {
+OPENVPN_LOG("Error::UNDEF");
                         auto client_delay = client->reconnect_delay();
                         queue_restart(client_delay ? client_delay : default_delay_);
                     }
@@ -541,6 +544,7 @@ class ClientConnect : ClientProto::NotifyCallback,
                     break;
                 case Error::CLIENT_RESTART:
                     {
+OPENVPN_LOG("Error::CLIENT_RESTART");
                         ClientEvent::Base::Ptr ev = new ClientEvent::ClientRestart(client->fatal_reason());
                         client_options->events().add_event(std::move(ev));
                         client_options->stats().error(Error::CLIENT_RESTART);

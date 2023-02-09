@@ -86,6 +86,7 @@ class AsyncResolvable
         void post_callback(typename RESOLVER_TYPE::results_type results,
                            openvpn_io::error_code error)
         {
+OPENVPN_LOG("post_callback called");
             openvpn_io::post(io_context, [self = Ptr(this), results, error]()
                              {
 	  auto parent = self->parent;

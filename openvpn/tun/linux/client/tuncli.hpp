@@ -323,6 +323,7 @@ class Client : public TunClient
 
     bool send(Buffer &buf)
     {
+OPENVPN_LOG("linux/tuncli - Client - send");
         if (impl)
             return impl->write(buf);
         else

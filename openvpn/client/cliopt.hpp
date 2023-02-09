@@ -219,40 +219,51 @@ class ClientOptions : public RC<thread_unsafe_refcount>
     {
         // parse general client options
         const ParseClientConfig pcc(opt);
+OPENVPN_LOG("ClientOptions-001");
 
         // creds
         userlocked_username = pcc.userlockedUsername();
         autologin = pcc.autologin();
         autologin_sessions = (autologin && config.autologin_sessions);
+OPENVPN_LOG("ClientOptions-002");
 
         // digest factory
         DigestFactory::Ptr digest_factory(new CryptoDigestFactory<SSLLib::CryptoAPI>());
+OPENVPN_LOG("ClientOptions-003");
 
         // initialize RNG/PRNG
         rng.reset(new SSLLib::RandomAPI(false));
         prng.reset(new SSLLib::RandomAPI(true));
+OPENVPN_LOG("ClientOptions-004");
 
         // frame
         // get tun-mtu and tun-mtu-max parameter from config
         const unsigned int tun_mtu = parse_tun_mtu(opt, 0);
         const unsigned int tun_mtu_max = std::max(parse_tun_mtu_max(opt, TUN_MTU_DEFAULT + 100), tun_mtu);
+OPENVPN_LOG("ClientOptions-005");
 
         const MSSCtrlParms mc(opt);
         frame = frame_init(true, tun_mtu_max, mc.mssfix_ctrl, true);
+OPENVPN_LOG("ClientOptions-006");
 
         // TCP queue limit
         tcp_queue_limit = opt.get_num<decltype(tcp_queue_limit)>("tcp-queue-limit", 1, tcp_queue_limit, 1, 65536);
+OPENVPN_LOG("ClientOptions-007");
 
         // route-nopull
         pushed_options_filter.reset(new PushedOptionsFilter(opt));
+OPENVPN_LOG("ClientOptions-008");
 
         // OpenVPN Protocol context (including SSL)
         cp_main = proto_config(opt, config, pcc, false);
+OPENVPN_LOG("ClientOptions-009");
         cp_relay = proto_config(opt, config, pcc, true); // may be null
+OPENVPN_LOG("ClientOptions-010");
 
         CryptoAlgs::allow_default_dc_algs<SSLLib::CryptoAPI>(cp_main->ssl_factory->libctx(),
                                                              !config.enable_nonpreferred_dcalgs,
                                                              config.enable_legacy_algorithms);
+OPENVPN_LOG("ClientOptions-011");
 
 #if (defined(ENABLE_KOVPN) || defined(ENABLE_OVPNDCO) || defined(ENABLE_OVPNDCOWIN)) && !defined(OPENVPN_FORCE_TUN_NULL) && !defined(OPENVPN_EXTERNAL_TUN_FACTORY)
         if (config.dco)
@@ -273,27 +284,54 @@ class ClientOptions : public RC<thread_unsafe_refcount>
         // If HTTP proxy parameters are not supplied by API, try to get them from config
         if (!http_proxy_options)
             http_proxy_options = HTTPProxyTransport::Options::parse(opt);
+OPENVPN_LOG("ClientOptions-012");
 
         // load remote list
         if (config.remote_override)
         {
+OPENVPN_LOG("ClientOptions-013");
             remote_list.reset(new RemoteList(config.remote_override));
             remote_list->set_random(prng);
         }
+//        else
+//            remote_list.reset(new RemoteList(opt, "", RemoteList::WARN_UNSUPPORTED, nullptr, prng));
         else
+        {
+OPENVPN_LOG("ClientOptions-014");
+OPENVPN_LOG("remote_list is null = " + std::string(remote_list == NULL ? "true" : "false"));
+OPENVPN_LOG("opt is null = " + std::string(opt == NULL ? "true" : "false"));
+OPENVPN_LOG("prng is null = " + std::string(prng == NULL ? "true" : "false"));
+// if (remote_list == NULL) {
+//   OPENVPN_LOG("ClientOptions-014a");
+//   std::string host = "127.0.0.1";
+//   std::string port = "1194";
+//   std::string tag = "TEST_SERVER";
+//   Protocol proto = Protocol(Protocol::UDPv4);
+//   RemoteList::Ptr newPtr(new RemoteList(host, port, proto, tag));
+//   OPENVPN_LOG("ClientOptions-014b");
+//   remote_list = newPtr;
+//   OPENVPN_LOG("ClientOptions-014c");
+// }
+//   else
             remote_list.reset(new RemoteList(opt, "", RemoteList::WARN_UNSUPPORTED, nullptr, prng));
+        }
+OPENVPN_LOG("ClientOptions-015");
+
         if (!remote_list->defined())
             throw option_error("no remote option specified");
+OPENVPN_LOG("ClientOptions-015");
 
         // If running in tun_persist mode, we need to do basic DNS caching so that
         // we can avoid emitting DNS requests while the tunnel is blocked during
         // reconnections.
         remote_list->set_enable_cache(config.tun_persist);
+OPENVPN_LOG("ClientOptions-016");
 
         // process server/port/family overrides
         remote_list->set_server_override(config.server_override);
         remote_list->set_port_override(config.port_override);
         remote_list->set_proto_version_override(config.proto_version_override);
+OPENVPN_LOG("ClientOptions-017");
 
         // process protocol override, should be called after set_enable_cache
         remote_list->handle_proto_override(config.proto_override,
@@ -302,24 +340,28 @@ class ClientOptions : public RC<thread_unsafe_refcount>
         // process remote-random
         if (opt.exists("remote-random"))
             remote_list->randomize();
+OPENVPN_LOG("ClientOptions-018");
 
         // get "float" option
         server_addr_float = opt.exists("float");
+OPENVPN_LOG("ClientOptions-019");
 
         // special remote cache handling for proxies
         if (alt_proxy)
         {
+OPENVPN_LOG("ClientOptions-020");
             remote_list->set_enable_cache(false); // remote server addresses will be resolved by proxy
             alt_proxy->set_enable_cache(config.tun_persist);
         }
         else if (http_proxy_options)
         {
+OPENVPN_LOG("ClientOptions-021");
             remote_list->set_enable_cache(false); // remote server addresses will be resolved by proxy
             http_proxy_options->proxy_server_set_enable_cache(config.tun_persist);
         }
 
         check_for_incompatible_options(opt);
-
+OPENVPN_LOG("ClientOptions-022");
 #ifdef OPENVPN_PLATFORM_UWP
         // workaround for OVPN3-62 Busy loop in win_event.hpp
         asio_work_always_on_ = true;
@@ -336,10 +378,11 @@ class ClientOptions : public RC<thread_unsafe_refcount>
 
         // init transport config
         const std::string session_name = load_transport_config();
-
+OPENVPN_LOG("ClientOptions-023");
         // initialize tun/tap
         if (dco)
         {
+OPENVPN_LOG("ClientOptions-024");
             DCO::TunConfig tunconf;
 #if defined(OPENVPN_COMMAND_AGENT) && defined(OPENVPN_PLATFORM_WIN)
             tunconf.setup_factory = WinCommandAgent::new_agent(opt);
@@ -360,6 +403,7 @@ class ClientOptions : public RC<thread_unsafe_refcount>
         }
         else
         {
+OPENVPN_LOG("ClientOptions-025");
 #if defined(OPENVPN_EXTERNAL_TUN_FACTORY)
             {
                 ExternalTun::Config tunconf;
@@ -498,11 +542,13 @@ class ClientOptions : public RC<thread_unsafe_refcount>
             }
 #endif
         }
+OPENVPN_LOG("ClientOptions-026");
 
         // The Core Library itself does not handle TAP/OSI_LAYER_2 currently,
         // so we bail out early whenever someone tries to use TAP configurations
         if (layer == Layer(Layer::OSI_LAYER_2))
             throw ErrorCode(Error::TAP_NOT_SUPPORTED, true, "OSI layer 2 tunnels are not currently supported");
+OPENVPN_LOG("ClientOptions-027");
 
         // server-poll-timeout
         {
@@ -510,6 +556,7 @@ class ClientOptions : public RC<thread_unsafe_refcount>
             if (o)
                 server_poll_timeout_ = parse_number_throw<unsigned int>(o->get(1, 16), "server-poll-timeout");
         }
+OPENVPN_LOG("ClientOptions-028");
 
         // create default creds object in case submit_creds is not called,
         // and populate it with embedded creds, if available
@@ -517,6 +564,7 @@ class ClientOptions : public RC<thread_unsafe_refcount>
             ClientCreds::Ptr cc = new ClientCreds();
             if (pcc.hasEmbeddedPassword())
             {
+OPENVPN_LOG("ClientOptions-029");
                 cc->set_username(userlocked_username);
                 cc->set_password(pcc.embeddedPassword());
                 cc->enable_password_cache(true);
@@ -526,6 +574,7 @@ class ClientOptions : public RC<thread_unsafe_refcount>
             }
             else if (autologin_sessions)
             {
+OPENVPN_LOG("ClientOptions-030");
                 // autologin sessions require replace_password_with_session_id
                 cc->set_replace_password_with_session_id(true);
                 submit_creds(cc);
@@ -533,10 +582,11 @@ class ClientOptions : public RC<thread_unsafe_refcount>
             }
             else
             {
+OPENVPN_LOG("ClientOptions-031");
                 submit_creds(cc);
             }
         }
-
+OPENVPN_LOG("ClientOptions-032");
         // configure push_base, a set of base options that will be combined with
         // options pushed by server.
         {
@@ -556,7 +606,7 @@ class ClientOptions : public RC<thread_unsafe_refcount>
             push_base->singleton.extend(opt, "redirect-dns");
             push_base->singleton.extend(opt, "inactive");
             push_base->singleton.extend(opt, "route-metric");
-
+OPENVPN_LOG("ClientOptions-033");
             // IPv6
             {
                 const unsigned int n6 = push_base->singleton.extend(opt, "block-ipv6");
@@ -570,10 +620,12 @@ class ClientOptions : public RC<thread_unsafe_refcount>
                 {
                     push_base->singleton.emplace_back("block-ipv4");
                 }
+OPENVPN_LOG("ClientOptions-034");
             }
         }
 
         handle_unused_options(opt);
+OPENVPN_LOG("ClientOptions-035");
     }
 
     void check_for_incompatible_options(const OptionList &opt)
@@ -1143,14 +1195,17 @@ class ClientOptions : public RC<thread_unsafe_refcount>
                                           const ParseClientConfig &pcc,
                                           const bool relay_mode)
     {
+OPENVPN_LOG("proto_config-001");
         // relay mode is null unless one of the below directives is defined
         if (relay_mode && !opt.exists("relay-mode"))
             return Client::ProtoConfig::Ptr();
+OPENVPN_LOG("proto_config-002");
 
         // load flags
         unsigned int lflags = SSLConfigAPI::LF_PARSE_MODE;
         if (relay_mode)
             lflags |= SSLConfigAPI::LF_RELAY_MODE;
+OPENVPN_LOG("proto_config-003");
 
         // client SSL config
         SSLLib::SSLAPI::Config::Ptr cc(new SSLLib::SSLAPI::Config());
@@ -1159,35 +1214,43 @@ class ClientOptions : public RC<thread_unsafe_refcount>
         cc->set_flags(SSLConst::LOG_VERIFY_STATUS);
         cc->set_debug_level(config.ssl_debug_level);
         cc->set_rng(rng);
+OPENVPN_LOG("proto_config-004");
         cc->set_local_cert_enabled(pcc.clientCertEnabled() && !config.disable_client_cert);
         /* load depends on private key password and legacy algorithms */
         cc->enable_legacy_algorithms(config.enable_legacy_algorithms);
         cc->set_private_key_password(config.private_key_password);
+OPENVPN_LOG("proto_config-005");
         cc->load(opt, lflags);
+OPENVPN_LOG("proto_config-006");
         cc->set_tls_version_min_override(config.tls_version_min_override);
         cc->set_tls_cert_profile_override(config.tls_cert_profile_override);
         cc->set_tls_cipher_list(config.tls_cipher_list);
         cc->set_tls_ciphersuite_list(config.tls_ciphersuite_list);
         if (!cc->get_mode().is_client())
             throw option_error("only client configuration supported");
+OPENVPN_LOG("proto_config-007");
 
         // client ProtoContext config
         Client::ProtoConfig::Ptr cp(new Client::ProtoConfig());
         cp->ssl_factory = cc->new_factory();
         cp->relay_mode = relay_mode;
+OPENVPN_LOG("proto_config-008");
         cp->dc.set_factory(new CryptoDCSelect<SSLLib::CryptoAPI>(cp->ssl_factory->libctx(), frame, cli_stats, prng));
         cp->dc_deferred = true; // defer data channel setup until after options pull
         cp->tls_auth_factory.reset(new CryptoOvpnHMACFactory<SSLLib::CryptoAPI>());
         cp->tls_crypt_factory.reset(new CryptoTLSCryptFactory<SSLLib::CryptoAPI>());
         cp->tls_crypt_metadata_factory.reset(new CryptoTLSCryptMetadataFactory());
         cp->tlsprf_factory.reset(new CryptoTLSPRFFactory<SSLLib::CryptoAPI>());
+OPENVPN_LOG("proto_config-009");
         cp->load(opt, *proto_context_options, config.default_key_direction, false);
+OPENVPN_LOG("proto_config-010");
         cp->set_xmit_creds(!autologin || pcc.hasEmbeddedPassword() || autologin_sessions);
         cp->extra_peer_info = build_peer_info(config, pcc, autologin_sessions);
         cp->frame = frame;
         cp->now = &now_;
         cp->rng = rng;
         cp->prng = prng;
+OPENVPN_LOG("proto_config-011");
 
         return cp;
     }

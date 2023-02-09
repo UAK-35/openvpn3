@@ -792,6 +792,7 @@ class HTTPCore : public Base, public TransportClientParent
                 }
                 else
 #endif
+OPENVPN_LOG("resolver.async_resolve: " + host.port);
                     resolver.async_resolve(host.host_transport(),
                                            host.port,
                                            [self = Ptr(this)](const openvpn_io::error_code &error,

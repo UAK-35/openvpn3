@@ -404,15 +404,24 @@ class ProtoContext
             protocol = Protocol();
             pid_mode = PacketIDReceive::UDP_MODE;
             key_direction = default_key_direction;
-
+OPENVPN_LOG("load-001");
             // layer
             {
                 const Option *dev = opt.get_ptr("dev-type");
+OPENVPN_LOG("load-002");
                 if (!dev)
                     dev = opt.get_ptr("dev");
+OPENVPN_LOG("load-003");
+//                if (!dev)
+//                    throw proto_option_error("missing dev-type or dev option");
                 if (!dev)
+                {
+OPENVPN_LOG("load-004");
                     throw proto_option_error("missing dev-type or dev option");
+                }
+OPENVPN_LOG("load-005");
                 const std::string &dev_type = dev->get(1, 64);
+OPENVPN_LOG("load-006");
                 if (string::starts_with(dev_type, "tun"))
                     layer = Layer(Layer::OSI_LAYER_3);
                 else if (string::starts_with(dev_type, "tap"))
@@ -420,7 +429,7 @@ class ProtoContext
                 else
                     throw proto_option_error("bad dev-type");
             }
-
+OPENVPN_LOG("load-007");
             // cipher/digest/tls-auth/tls-crypt
             {
                 CryptoAlgs::Type cipher = CryptoAlgs::NONE;
@@ -523,7 +532,7 @@ class ProtoContext
                     }
                 }
             }
-
+OPENVPN_LOG("load-008");
             // key-direction
             {
                 if (key_direction >= -1 && key_direction <= 1)
@@ -545,7 +554,7 @@ class ProtoContext
                 else
                     throw proto_option_error("bad key-direction default");
             }
-
+OPENVPN_LOG("load-009");
             // compression
             {
                 const Option *o = opt.get_ptr("compress");
@@ -580,7 +589,7 @@ class ProtoContext
                     }
                 }
             }
-
+OPENVPN_LOG("load-010");
             // tun-mtu
             tun_mtu = parse_tun_mtu(opt, tun_mtu);
             tun_mtu_max = parse_tun_mtu_max(opt, tun_mtu_max);
@@ -600,7 +609,7 @@ class ProtoContext
                     mss_parms.fixed = true;
                 }
             }
-
+OPENVPN_LOG("load-010");
             // load parameters that can be present in both config file or pushed options
             load_common(opt, pco, server ? LOAD_COMMON_SERVER : LOAD_COMMON_CLIENT);
         }

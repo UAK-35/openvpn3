@@ -728,6 +728,7 @@ class OMI : public OMICore, public ClientAPI::LogReceiver
 
     virtual void omi_sighup() override
     {
+OPENVPN_LOG("omi_sighup");
         if (client)
             client->reconnect(1);
     }
@@ -763,6 +764,7 @@ class OMI : public OMICore, public ClientAPI::LogReceiver
 
     void event_msg(const ClientAPI::Event &ev, const ClientAPI::ConnectionInfo *ci)
     {
+OPENVPN_LOG("event_msg: " + ev.name);
         // log events (even if in stopping state)
         {
             ClientAPI::LogInfo li;
